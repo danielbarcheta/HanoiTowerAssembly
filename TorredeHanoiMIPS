@@ -1,0 +1,105 @@
+
+.data
+msgInicial: .asciiz "Digite o número de discos: "
+moveDisco: .asciiz "\nMova o disco "
+doPoste: .asciiz " do poste "
+paraPoste: .asciiz " para o poste "
+
+.text
+.globl main
+
+main:
+    li $v0,  4          # chamada do sistema para printarmos a msgInicial (código 4)
+    la $a0, msgInicial
+    syscall
+    li $v0,  5          # chamada do sistema para lermos o inteiro (código 5) 
+    syscall             #que representa o numero de discos (variavel numDiscos no alto nivel)
+
+             # como especificado no relatório, usaremos os registradores $a0, $a1, $a2 e $a3 
+    add $a0, $v0, $zero # como parâmetros do nosso método torredeHanoi  Primeiramente,
+    li $a2, 'C'         #  utilizaremos $zero para auxiliar a movimentação do conteúdo de $v0 para $a0
+    li $a1, 'A'
+    li $a3, 'B'
+
+  jal torredeHanoi     # Chamada do método torredeHanoi
+  li $v0, 10          # Saída do programa (código 10)
+    syscall
+
+   
+  
+
+torredeHanoi:
+
+   #Alocaremos o espaço de 20 "gavetinhas" na pilha
+    addi $sp, $sp, -20 
+    sw   $ra, 0($sp)
+    sw   $s0, 4($sp)
+    sw   $s1, 8($sp)
+    sw   $s2, 12($sp)
+    sw   $s3, 16($sp)
+
+    add $s0, $a0, $zero
+    add $s1, $a1, $zero
+    add $s2, $a2, $zero
+    add $s3, $a3, $zero
+
+    addi $t0, $zero, 1
+    beq $s0, $t0, saida
+
+    recursao1:
+
+        addi $a0, $s0, -1
+        add $a1, $s1, $zero
+        add $a2, $s3, $zero
+        add $a3, $s2, $zero
+        jal torredeHanoi
+
+        j saida
+
+    recursao2:
+
+        addi $a0, $s0, -1
+        add $a1, $s3, $zero
+        add $a2, $s2, $zero
+        add $a3, $s1, $zero
+        jal torredeHanoi
+
+    saidaerestauracao:
+
+        lw   $ra, 0($sp)        # Restaura os registradores da pilha 
+        lw   $s0, 4($sp)        # com as operações de load na posição 0 1, 2, 3 e 4.
+        lw   $s1, 8($sp)
+        lw   $s2, 12($sp)
+        lw   $s3, 16($sp)
+
+        addi $sp, $sp, 20       #  Restaura o ponteiro para a pilha
+                               #  (subtraído anteriormente para alocar o espaço usado)
+ 
+        jr $ra
+
+    saida:
+
+        li $v0,  4              # chamada para print que indica movimentação de disco
+        la $a0,  moveDisco
+        syscall
+        li $v0,  1              # print do número do disco a ser movido
+        add $a0, $s0, $zero
+        syscall
+        li $v0,  4              # chamada para print que indica movimentação de disco
+        la $a0,  doPoste
+        syscall
+        li $v0,  11             # chamada para printar o caracter que representa a posição de início do poste (A, B ou C)
+        add $a0, $s1, $zero
+        syscall
+        li $v0,  4              # chamada para print que indica movimentação de disco
+        la $a0,  paraPoste
+        syscall
+        li $v0,  11             # chamada para printar o caracter que representa o poste destino (A, B ou C)
+        add $a0, $s2, $zero
+        syscall
+
+        beq $s0, $t0, saidaerestauracao
+        j recursao2
+        
+ 
+   
